@@ -5,49 +5,41 @@
 with open((__file__.rstrip("main.py")+"input.txt"), 'r') as input_file:
     input = input_file.read()
 
-def extractTwoNumbers(line):
-    num1, num2 = map(int, line.split()[:2])
-    return num1, num2
+current = 50
+totalZero = 0
 
-list1 = []
-list2 = []
 lines = input.splitlines()
 for line in lines:
-    num1, num2 = extractTwoNumbers(line)
-    list1.append(num1)
-    list2.append(num2)
-
-# Part 1
-print('PART 1')
-sortedList1 = list1.copy()
-sortedList2 = list2.copy()
-sortedList1.sort()
-sortedList2.sort()
-
-# lengths should be the same
-assert len(list1) == len(list2)
-
-size = len(list1)
-distance = 0
-for i in range(size):
-    distance += abs(list1[i] - list2[i])
+    direction = line[0]
+    delta = int(line[1:])
     
-print(f'\tTOTAL DISTANCE: {distance}\n')
-
-# Part 2
-print('PART 2')
-countDict = {}
-for i in range(size):
-    num = list2[i]
-    if countDict.get(num) is None:
-        countDict[num] = 1
+    # Normalize delta between 0 and 99
+    while delta >= 100:
+        totalZero += 1
+        delta -= 100
+    
+    if direction == 'L':
+        current -= delta
+        if current < 0:
+            # Count the time we passed 0 if we didn't start at 0
+            if (current + delta != 0):
+                print(f'\tCrossed 0 moving left {delta}')
+                totalZero += 1
+            current += 100
     else:
-        countDict[num] += 1
-
-similarityScore = 0
-for i in range(size):
-    num = list1[i]
-    count = countDict.get(num, 0)
-    similarityScore += num * count
+        current += delta
+        if current >= 100:
+            # Only count another if we passed 0, not if we landed on it (same as 100)
+            if current > 100:
+                print(f'\tCrossed 0 moving right {delta}')
+                totalZero += 1
+            current -= 100
+                
     
-print(f'\tSIMILARITY SCORE: {similarityScore}')
+    if current == 0:
+        totalZero += 1
+    
+    print(f'{line}\t{current}\t{totalZero}')
+
+print()
+print(totalZero)
