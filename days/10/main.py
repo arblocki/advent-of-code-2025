@@ -7,10 +7,11 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 import scipy
+import numpy as np
 
 from utils import get_input
 from itertools import combinations_with_replacement, permutations
-from scipy.optimize import linprog
+from scipy.optimize import milp, LinearConstraint, Bounds
 
 input = get_input(__file__)
 lines = input.splitlines()
@@ -161,12 +162,17 @@ for line in lines:
                 nextArr.append(0)
         A.append(nextArr)
     targets = solution2
-    # print(f'\tsolving:')
-    # print(f'\t\t{A}')
-    # print(f'\t\t{targets}')
-    result = linprog(c, A_eq=A, b_eq=targets, bounds=(0, None), integrality=c)
-    # print(f'\tresult:')
-    # print(f'\t\t{result.x}')
+
+    # Bug: LinearConstraint with lb==ub doesn't enforce equality properly in milp
+    # Use two separate constraints: >= and <=
+    constraints = [
+        LinearConstraint(A, lb=targets, ub=np.inf),  # A @ x >= targets
+        LinearConstraint(A, lb=-np.inf, ub=targets)  # A @ x <= targets
+    ]
+    integrality = [1] * numButtons
+    bounds = Bounds(lb=0, ub=np.inf)
+
+    result = milp(c, constraints=constraints, integrality=integrality, bounds=bounds)
     print(f'\t{result.fun}')
     if not result.success:
         assert False
